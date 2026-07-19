@@ -1,4 +1,17 @@
 // العميل — يتزامن عبر Firebase Realtime Database
+window.addEventListener("error", (e) => {
+  const el = document.getElementById("status");
+  if (el) { el.className = "status"; el.textContent = "خطأ: " + (e.message || e.error); }
+});
+
+function showErr(msg) {
+  const el = document.getElementById("status");
+  if (el) { el.className = "status"; el.textContent = "خطأ: " + msg; }
+}
+
+if (typeof firebase === "undefined" || !db) {
+  showErr("لم يتم تحميل Firebase — تحقق من اتصال الإنترنت أو firebase-config.js");
+}
 const roomsRef = db.ref("rooms");
 let myRoomId = null;
 let myName = "";
@@ -19,20 +32,26 @@ function roomRef(id) {
 
 // الدخول
 $("createBtn").onclick = () => {
-  myName = $("nameInput").value.trim() || "لاعب";
-  const id = CN.randomId();
-  myRoomId = id;
-  isHost = true;
-  roomRef(id).set({
-    host: myName,
-    state: "lobby",
-    players: { [myName]: { name: myName, role: null, team: null } },
-    customWords: [],
-    board: null,
-    winner: null,
-  });
-  listenRoom(id);
-  show("waiting");
+  if (typeof CN === "undefined") { showErr("game.js لم يُحمّل"); return; }
+  if (!db) { showErr("Firebase غير متصل"); return; }
+  try {
+    myName = $("nameInput").value.trim() || "لاعب";
+    const id = CN.randomId();
+    myRoomId = id;
+    isHost = true;
+    roomRef(id).set({
+      host: myName,
+      state: "lobby",
+      players: { [myName]: { name: myName, role: null, team: null } },
+      customWords: [],
+      board: null,
+      winner: null,
+    });
+    listenRoom(id);
+    show("waiting");
+  } catch (err) {
+    showErr(err.message);
+  }
 };
 
 $("joinBtn").onclick = () => {
