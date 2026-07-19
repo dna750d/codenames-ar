@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>كود نيمز - Codenames</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- شاشة الدخول -->
+    <section id="lobby" class="screen">
+      <h1 class="title">كود نيمز</h1>
+      <p class="subtitle">العبة الكلاسيكية بالعربية</p>
+      <input id="nameInput" class="input" placeholder="اسمك" maxlength="12" />
+      <button id="createBtn" class="btn primary">إنشاء غرفة</button>
+      <div class="divider">أو</div>
+      <input id="roomInput" class="input" placeholder="رمز الغرفة" maxlength="4" />
+      <button id="joinBtn" class="btn">دخول غرفة</button>
+    </section>
+
+    <!-- شاشة الانتظار -->
+    <section id="waiting" class="screen hidden">
+      <h2>رمز الغرفة</h2>
+      <div id="roomCode" class="room-code">----</div>
+      <p class="hint">شارك الرمز مع أصدقائك للدخول</p>
+      <div id="playerList" class="player-list"></div>
+
+      <div id="hostPanel" class="host-panel hidden">
+        <h3>الكلمات المخصصة (اختياري)</h3>
+        <p class="hint">أضف كلماتك الخاصة، سطر واحد لكل كلمة</p>
+        <textarea id="customWords" class="input" rows="4" placeholder="قطة&#10;سيارة&#10;بحر"></textarea>
+
+        <h3>توزيع الأدوار</h3>
+        <div id="assignArea" class="assign-area"></div>
+
+        <button id="startBtn" class="btn primary">بدء اللعبة</button>
+      </div>
+    </section>
+
+    <!-- شاشة اللعب -->
+    <section id="game" class="screen hidden">
+      <div class="game-header">
+        <div id="turnBadge" class="turn-badge"></div>
+        <button id="leaveBtn" class="btn small">خروج</button>
+      </div>
+      <div id="roleInfo" class="role-info"></div>
+      <div id="board" class="board"></div>
+      <div id="status" class="status"></div>
+    </section>
+  </div>
+
+  <script src="client.js"></script>
+</body>
+</html>
