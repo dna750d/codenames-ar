@@ -1,66 +1,89 @@
-const ws = new WebSocket(`ws://${location.host}`);
-let myRoom = null;
+// العميل — يتزامن عبر Firebase Realtime Database
+const roomsRef = db.ref("rooms");
+let myRoomId = null;
+let myName = "";
+let isHost = false;
+let myRole = null;
+let myTeam = null;
 let lastState = null;
 
 const $ = (id) => document.getElementById(id);
 const screens = { lobby: $("lobby"), waiting: $("waiting"), game: $("game") };
-
 function show(name) {
   for (const k in screens) screens[k].classList.toggle("hidden", k !== name);
 }
 
-function send(obj) {
-  if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj));
+function roomRef(id) {
+  return db.ref("rooms/" + id);
 }
 
-ws.onmessage = (e) => {
-  const msg = JSON.parse(e.data);
-  if (msg.type === "room") {
-    myRoom = msg.id;
-    $("roomCode").textContent = msg.id;
-    show("waiting");
-    renderWaiting(lastState);
-  } else if (msg.type === "state") {
-    lastState = msg.state;
-    handleState(msg.state);
-  } else if (msg.type === "error") {
-    alert(msg.message);
-  }
-};
-
 // الدخول
-$("createBtn").onclick = () => send({ type: "create", name: $("nameInput").value.trim() });
-$("joinBtn").onclick = () => {
-  const room = $("roomInput").value.trim().toUpperCase();
-  if (room) send({ type: "join", room, name: $("nameInput").value.trim() });
+$("createBtn").onclick = () => {
+  myName = $("nameInput").value.trim() || "لاعب";
+  const id = CN.randomId();
+  myRoomId = id;
+  isHost = true;
+  roomRef(id).set({
+    host: myName,
+    state: "lobby",
+    players: { [myName]: { name: myName, role: null, team: null } },
+    customWords: [],
+    board: null,
+    winner: null,
+  });
+  listenRoom(id);
+  show("waiting");
 };
 
-function handleState(s) {
-  if (s.state === "lobby") {
+$("joinBtn").onclick = () => {
+  const id = $("roomInput").value.trim().toUpperCase();
+  myName = $("nameInput").value.trim() || "لاعب";
+  if (!id) return;
+  roomRef(id).once("value", (snap) => {
+    if (!snap.exists()) {
+      alert("الغرفة غير موجودة");
+      return;
+    }
+    myRoomId = id;
+    isHost = false;
+    const players = snap.val().players || {};
+    players[myName] = { name: myName, role: null, team: null };
+    roomRef(id).child("players").set(players);
+    listenRoom(id);
     show("waiting");
-    renderWaiting(s);
-  } else {
-    show("game");
-    renderGame(s);
-  }
+  });
+};
+
+function listenRoom(id) {
+  roomRef(id).on("value", (snap) => {
+    const s = snap.val();
+    if (!s) return;
+    lastState = s;
+    if (s.state === "lobby") {
+      show("waiting");
+      renderWaiting(s);
+    } else {
+      show("game");
+      renderGame(s);
+    }
+  });
 }
 
 function renderWaiting(s) {
-  if (!s) return;
-  // قائمة اللاعبين
+  $("roomCode").textContent = myRoomId;
   const list = $("playerList");
   list.innerHTML = "";
-  s.players.forEach((p) => {
+  Object.values(s.players || {}).forEach((p) => {
     const div = document.createElement("div");
     div.className = "player-chip";
     const tagClass = p.role === "spymaster" ? "tag-sm" : p.team === "red" ? "tag-red" : p.team === "blue" ? "tag-blue" : "tag-none";
     const tagText = p.role === "spymaster" ? "ضابط" : p.team === "red" ? "أحمر" : p.team === "blue" ? "أزرق" : "بدون";
-    div.innerHTML = `<span>${p.name}${s.host && p.name === s.players.find(x=>x)?.name ? " 👑" : ""}</span><span class="team-tag ${tagClass}">${tagText}</span>`;
+    const crown = s.host === p.name ? " 👑" : "";
+    div.innerHTML = `<span>${p.name}${crown}</span><span class="team-tag ${tagClass}">${tagText}</span>`;
     list.appendChild(div);
   });
 
-  // لوحة المضيف
-  if (s.host) {
+  if (isHost) {
     $("hostPanel").classList.remove("hidden");
     renderAssign(s);
   } else {
@@ -71,7 +94,7 @@ function renderWaiting(s) {
 function renderAssign(s) {
   const area = $("assignArea");
   area.innerHTML = "";
-  s.players.forEach((p) => {
+  Object.values(s.players || {}).forEach((p) => {
     const row = document.createElement("div");
     row.className = "assign-row";
     row.innerHTML = `
@@ -90,11 +113,12 @@ function renderAssign(s) {
 }
 
 $("customWords").onchange = () => {
-  const words = $("customWords").value.split("\n").map((w) => w.trim()).filter(Boolean);
-  send({ type: "setCustomWords", words });
+  const words = $("customWords").value.split("\n").map((w) => w.trim()).filter(Boolean).slice(0, 50);
+  if (isHost) roomRef(myRoomId).child("customWords").set(words);
 };
 
 $("startBtn").onclick = () => {
+  if (!isHost) return;
   const assignments = {};
   document.querySelectorAll("#assignArea select").forEach((sel) => {
     if (sel.value) {
@@ -102,59 +126,73 @@ $("startBtn").onclick = () => {
       assignments[sel.dataset.name] = { team, role };
     }
   });
-  send({ type: "assignRoles", assignments });
-  send({ type: "start" });
+  const s = lastState;
+  const players = { ...s.players };
+  for (const name in assignments) {
+    if (players[name]) players[name] = { ...players[name], ...assignments[name] };
+  }
+  const pool = [...CN.DEFAULT_WORDS];
+  if (s.customWords && s.customWords.length) pool.push(...s.customWords);
+  const board = CN.createBoard(pool);
+  roomRef(myRoomId).update({ players, board, state: "playing", winner: null });
+};
+
+$("resetBtn").onclick = () => {
+  if (isHost) roomRef(myRoomId).update({ state: "lobby", board: null, winner: null });
 };
 
 function renderGame(s) {
-  // معلومات الدور
+  const me = s.players && s.players[myName];
+  myRole = me ? me.role : null;
+  myTeam = me ? me.team : null;
+
   const ri = $("roleInfo");
-  if (s.you && s.you.team) {
-    ri.className = `role-info ${s.you.team} ${s.you.role}`;
-    ri.textContent = `فريقك: ${s.you.team === "red" ? "الأحمر" : "الأزرق"}`;
+  if (myTeam) {
+    ri.className = `role-info ${myTeam} ${myRole}`;
+    ri.textContent = `فريقك: ${myTeam === "red" ? "الأحمر" : "الأزرق"}`;
   } else {
     ri.className = "role-info";
     ri.textContent = "مشاهد";
   }
 
-  // الدور الحالي
   const tb = $("turnBadge");
   if (s.board) {
     tb.className = `turn-badge turn-${s.board.turn}`;
     tb.textContent = `دور: ${s.board.turn === "red" ? "الأحمر" : "الأزرق"}`;
   }
 
-  // اللوحة
   const board = $("board");
   board.innerHTML = "";
-  const canReveal = s.you && s.you.role === "spymaster" && s.state === "playing";
+  const canReveal = myRole === "spymaster" && !s.winner;
   s.board.cells.forEach((c, i) => {
     const cell = document.createElement("div");
-    const revealed = c.revealed;
-    const cls = revealed ? `revealed ${c.role}` : "";
-    cell.className = `cell ${cls} ${canReveal && !revealed ? "clickable" : ""}`;
+    const cls = c.revealed ? `revealed ${c.role}` : "";
+    cell.className = `cell ${cls} ${canReveal && !c.revealed ? "clickable" : ""}`;
     cell.textContent = c.word;
-    if (canReveal && !revealed) {
-      cell.onclick = () => send({ type: "reveal", index: i });
+    if (canReveal && !c.revealed) {
+      cell.onclick = () => {
+        const updated = CN.applyReveal(s.board, i);
+        const patch = { cells: updated.cells, turn: updated.turn };
+        if (updated.winner) patch.winner = updated.winner;
+        roomRef(myRoomId).child("board").update(patch);
+      };
     }
     board.appendChild(cell);
   });
 
-  // الحالة
+  if (isHost) $("resetBtn").classList.remove("hidden");
+
   const st = $("status");
-  if (s.state === "finished" && s.winner) {
+  if (s.winner) {
     st.className = `status win-${s.winner}`;
     st.textContent = `فاز الفريق ${s.winner === "red" ? "الأحمر" : "الأزرق"} 🎉`;
   } else {
     st.className = "status";
     st.textContent = "";
   }
-
-  // زر الخروج للمضيف لإعادة الضبط
 }
 
 $("leaveBtn").onclick = () => {
+  if (myRoomId) roomRef(myRoomId).child("players/" + myName).remove();
   location.reload();
 };
-
-ws.onclose = () => alert("انقطع الاتصال بالخادم");

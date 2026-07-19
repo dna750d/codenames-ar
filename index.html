@@ -28,13 +28,12 @@
 
       <div id="hostPanel" class="host-panel hidden">
         <h3>الكلمات المخصصة (اختياري)</h3>
-        <p class="hint">أضف كلماتك الخاصة، سطر واحد لكل كلمة</p>
+        <p class="hint">أضف كلماتك، سطر واحد لكل كلمة</p>
         <textarea id="customWords" class="input" rows="4" placeholder="قطة&#10;سيارة&#10;بحر"></textarea>
-
         <h3>توزيع الأدوار</h3>
         <div id="assignArea" class="assign-area"></div>
-
         <button id="startBtn" class="btn primary">بدء اللعبة</button>
+        <button id="resetBtn" class="btn hidden">إعادة الضبط</button>
       </div>
     </section>
 
@@ -50,6 +49,11 @@
     </section>
   </div>
 
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="game.js"></script>
   <script src="client.js"></script>
 </body>
 </html>
