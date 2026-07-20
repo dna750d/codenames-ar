@@ -146,6 +146,17 @@ textarea.input { text-align: right; resize: vertical; }
 .cell.revealed.assassin { background: var(--assassin); color: white; }
 .cell.clickable:active { border-color: #fff; }
 
+.conn-status {
+  text-align: center;
+  padding: 8px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  background: #2a2f40;
+  border: 1px solid #444;
+}
+.conn-status.ok { color: #2ecc71; }
+.conn-status.err { color: #e74c3c; }
+
 .status { text-align: center; padding: 10px; font-size: 1.1rem; font-weight: bold; }
 .win-red { color: var(--red); }
 .win-blue { color: var(--blue); }
