@@ -8,53 +8,45 @@
 </head>
 <body>
   <div id="app">
-    <div id="connStatus" class="conn-status">جاري التحقق من الاتصال...</div>
-    <!-- شاشة الدخول -->
     <section id="lobby" class="screen">
       <h1 class="title">كود نيمز</h1>
-      <p class="subtitle">العبة الكلاسيكية بالعربية</p>
-      <input id="nameInput" class="input" placeholder="اسمك" maxlength="12" />
-      <button id="createBtn" class="btn primary">إنشاء غرفة</button>
-      <div class="divider">أو</div>
-      <input id="roomInput" class="input" placeholder="رمز الغرفة" maxlength="4" />
-      <button id="joinBtn" class="btn">دخول غرفة</button>
+      <p class="subtitle">لعبة محلية — نفس الجهاز</p>
+      <button id="startLocalBtn" class="btn primary">ابدأ اللعبة</button>
+      <p class="hint">جميع الأدوار على نفس الشاشة — مناسب للعب محلي</p>
     </section>
 
-    <!-- شاشة الانتظار -->
-    <section id="waiting" class="screen hidden">
-      <h2>رمز الغرفة</h2>
-      <div id="roomCode" class="room-code">----</div>
-      <p class="hint">شارك الرمز مع أصدقائك للدخول</p>
-      <div id="playerList" class="player-list"></div>
-
-      <div id="hostPanel" class="host-panel hidden">
-        <h3>الكلمات المخصصة (اختياري)</h3>
-        <p class="hint">أضف كلماتك، سطر واحد لكل كلمة</p>
-        <textarea id="customWords" class="input" rows="4" placeholder="قطة&#10;سيارة&#10;بحر"></textarea>
-        <h3>توزيع الأدوار</h3>
-        <div id="assignArea" class="assign-area"></div>
-        <button id="startBtn" class="btn primary">بدء اللعبة</button>
-        <button id="resetBtn" class="btn hidden">إعادة الضبط</button>
-      </div>
-    </section>
-
-    <!-- شاشة اللعب -->
     <section id="game" class="screen hidden">
       <div class="game-header">
-        <div id="turnBadge" class="turn-badge"></div>
-        <button id="leaveBtn" class="btn small">خروج</button>
+        <div class="title-sm">لوحة اللعبة</div>
+        <button id="restartBtn" class="btn small">لعبة جديدة</button>
       </div>
-      <div id="roleInfo" class="role-info"></div>
+
+      <div class="teams">
+        <div class="team-box red">
+          <h3>الفريق الأحمر</h3>
+          <div id="redSpy" class="spy-word"></div>
+          <div id="redOps" class="ops"></div>
+        </div>
+        <div class="team-box blue">
+          <h3>الفريق الأزرق</h3>
+          <div id="blueSpy" class="spy-word"></div>
+          <div id="blueOps" class="ops"></div>
+        </div>
+      </div>
+
+      <div class="turn-indicator" id="turnIndicator"></div>
+
       <div id="board" class="board"></div>
+
+      <div class="controls">
+        <button id="toggleViewBtn" class="btn">تبديل العرض</button>
+      </div>
+
       <div id="status" class="status"></div>
     </section>
   </div>
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-  <script src="firebase-config.js"></script>
   <script src="game.js"></script>
-  <script src="client.js"></script>
+  <script src="local-client.js"></script>
 </body>
 </html>
