@@ -9,10 +9,21 @@ function showErr(msg) {
   if (el) { el.className = "status"; el.textContent = "خطأ: " + msg; }
 }
 
-if (typeof firebase === "undefined" || !db) {
-  showErr("لم يتم تحميل Firebase — تحقق من اتصال الإنترنت أو firebase-config.js");
+function setConn(msg, ok) {
+  const el = document.getElementById("connStatus");
+  if (el) { el.textContent = msg; el.className = "conn-status " + (ok ? "ok" : "err"); }
 }
-const roomsRef = db.ref("rooms");
+
+if (typeof firebase === "undefined") {
+  setConn("فشل تحميل Firebase — تحقق من الإنترنت", false);
+} else if (!db) {
+  setConn("Firebase محمّل لكن قاعدة البيانات غير متاحة", false);
+} else {
+  db.ref(".info/connected").once("value", (snap) => {
+    setConn(snap.val() ? "متصل بالخادم ✓" : "غير متصل حالياً", snap.val());
+  }).catch(() => setConn("لا يمكن الاتصال بقاعدة البيانات", false));
+}
+const roomsRef = db ? db.ref("rooms") : null;
 let myRoomId = null;
 let myName = "";
 let isHost = false;
@@ -27,6 +38,7 @@ function show(name) {
 }
 
 function roomRef(id) {
+  if (!db) { showErr("Firebase غير متصل"); return null; }
   return db.ref("rooms/" + id);
 }
 
