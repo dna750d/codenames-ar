@@ -34,7 +34,7 @@ function randomId(len = 4) {
   return id;
 }
 
-export function createBoard(wordPool) {
+function createBoard(wordPool) {
   const pool = wordPool.length >= 25 ? wordPool : [...wordPool, ...DEFAULT_WORDS];
   const words = shuffle(pool).slice(0, 25);
   const startTeam = "red";
@@ -48,7 +48,7 @@ export function createBoard(wordPool) {
   return { cells, startTeam, turn: startTeam };
 }
 
-export function applyReveal(board, index) {
+function applyReveal(board, index) {
   if (!board) return null;
   const cell = board.cells[index];
   if (!cell || cell.revealed) return board;
