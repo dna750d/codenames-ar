@@ -1,8 +1,0 @@
-services:
-  - type: web
-    name: codenames-ar
-    runtime: node
-    plan: free
-    buildCommand: npm install
-    startCommand: npm start
-    healthCheckPath: /
