@@ -1,5 +1,0 @@
-# ملفات يتم تجاهلها عند الرفع على الاستضافة
-node_modules
-npm-debug.log
-.DS_Store
-.env
